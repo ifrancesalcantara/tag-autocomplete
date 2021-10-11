@@ -1,5 +1,5 @@
 // I would store javascript object-related functions in a generic file like this.
-// For example, comparing that two arrays of strings (or IDs)
+// For example, comparing two arrays have the same strings with no regard to order may be used across the application for ID containing arrays
 
 function findIndexOfFirstUnmatchingCharacterBetweenStrings ({ string1, string2 }) {
   return string1.split('').findIndex((char, index) => {
@@ -7,22 +7,43 @@ function findIndexOfFirstUnmatchingCharacterBetweenStrings ({ string1, string2 }
   })
 }
 
-function findChangedWordOnInput ({ newValue, oldValue }) {
-  let changedCharacterIndex = oldValue ? findIndexOfFirstUnmatchingCharacterBetweenStrings({ string1: newValue, string2: oldValue }) : 0
-  const breakwordCharacters = [' ', '\n']
-  if (!!changedCharacterIndex && breakwordCharacters.includes(newValue.split('')[changedCharacterIndex])) {
-    changedCharacterIndex--
+function getCaretPosition(editableDiv) {
+  var caretPos = 0,
+    sel, range
+  if (window.getSelection) {
+    sel = window.getSelection()
+    if (sel.rangeCount) {
+      range = sel.getRangeAt(0)
+      if (range.commonAncestorContainer.parentNode == editableDiv) {
+        caretPos = range.endOffset
+      }
+    }
+  } else if (document.selection && document.selection.createRange) {
+    range = document.selection.createRange()
+    if (range.parentElement() == editableDiv) {
+      var tempEl = document.createElement("span")
+      editableDiv.insertBefore(tempEl, editableDiv.firstChild);
+      var tempRange = range.duplicate()
+      tempRange.moveToElementText(tempEl)
+      tempRange.setEndPoint("EndToEnd", range)
+      caretPos = tempRange.text.length
+    }
   }
-  const newValueCharacterData = newValue.split('').map((character, index) => ({ character, index }))
-  const changedWordStartingSpace = newValueCharacterData.filter(({ index, character }) => index <= changedCharacterIndex && breakwordCharacters.includes(character)).pop()
-  const changedWordEndingSpace = newValueCharacterData.filter(({ index, character }) => index >= changedCharacterIndex && breakwordCharacters.includes(character)).pop()
-  const changedWordStartingIndex = changedWordStartingSpace ? changedWordStartingSpace.index + 1 : 0
-  const changedWordEndingIndex = changedWordEndingSpace ? changedWordEndingSpace.index - 1 : newValue.split('').length
-  return newValue.split('').filter((char, i) => i >= changedWordStartingIndex && i <= changedWordEndingIndex).join('')
+  return caretPos
 }
 
+function setCaretPosition({ el, offset }) {
+  var range = document.createRange()
+  var sel = window.getSelection()
+  range.setStart(el, offset)
+  range.collapse(true)
+  
+  sel.removeAllRanges()
+  sel.addRange(range)
+}
 
 export {
-  findChangedWordOnInput,
+  getCaretPosition,
+  setCaretPosition,
   findIndexOfFirstUnmatchingCharacterBetweenStrings
 }
