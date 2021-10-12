@@ -4,6 +4,7 @@
     :items="availableTags"
     @search="listTags($event)"
     @open="onOpen"
+    :disabled="hidePopover"
     insert-space>
     <div
       class="editor show-spaces"
@@ -43,6 +44,8 @@ export default {
     placeholder: String
   },
   data: () => ({
+    hidePopover: false,
+    addingTagText: '',
     elementId: null,
     textValue: '',
     loading: false
@@ -57,11 +60,12 @@ export default {
   },
   methods: {
     getInnerHTML () {
+      this.addingTagText = ''
       const html = this.textValue.split('\n').map((p) => {
         return p.split(' ').map((w) => {
           return w.startsWith('#') && w !== '#'
-            ? `<span class="active-tag" contentEditable="false">${w}</span>`
-            : w
+            ? `<span class="active-tag" contentEditable="false">${w.trim()}</span>`
+            : w.trim()
           }).join(' ')
       })
         .filter((p, i) => p || this.textValue.split('\n')[i + 1])
@@ -70,13 +74,22 @@ export default {
       setCaretPosition({ el: this.$refs[this.elementId], childNum: this.$refs[this.elementId].childNodes.length - 1, charNum: 1 })
     },
     listTags (search) {
+      this.addingTagText = search
       this.loading = true
       this.$store.dispatch('tags/list', { search, save: true }).finally(() => {
         this.loading = false
       })
     },
     onOpen () {
+      this.hidePopover = false
       this.$store.commit('tags/resetList')
+    },
+    checkGetHTML (e) {
+      if (['Enter', ' '].includes(e.key) && this.addingTagText) {
+        e.preventDefault()
+        this.hidePopover = true
+        this.getInnerHTML()
+      }
     }
   },
   watch: {
@@ -97,8 +110,12 @@ export default {
   },
   created () {
     this.elementId = generateUUID()
+    window.addEventListener('keydown', this.checkGetHTML)
   },
-  mixins: [vuetifyMixins]
+  mixins: [vuetifyMixins],
+  beforeDestroy () {
+    window.removeEventListener('keydown', this.checkGetHTML)
+  }
 }
 </script>
 
