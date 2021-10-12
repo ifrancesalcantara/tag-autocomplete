@@ -17,7 +17,7 @@
         :placeholder="placeholder || $t('default_content.textarea_placeholder')"
       />
     </mentionable>
-    <v-menu v-if="loading || filteredTags.length" :value="!!addingTagText" :position-x="positionX" :nudge-bottom="nudgeBottom" :min-width="xsOnly ? '95%' : '300px'">
+    <v-menu v-if="loading || filteredTags.length" :value="!!addingTagText && !hideMenu" :position-x="positionX" :nudge-bottom="nudgeBottom" :min-width="xsOnly ? '95%' : '300px'">
       <v-list class="pt-1 pb-0" :class="{ 'min-height-100px': loading }">
         <v-list-item v-for="(tag, i) in filteredTags" :key="i" @click="applyMentionByClick(i)" :class="{ 'active-tag': $refs.mentionable.selectedIndex === i }">
           <v-list-item-title>{{ tag.label }}</v-list-item-title>
@@ -44,6 +44,7 @@ export default {
   data: () => ({
     addingTagText: '',
     filteredTags: [],
+    hideMenu: false,
     elementId: null,
     nudgeBottom: 0,
     loading: false,
@@ -113,12 +114,14 @@ export default {
     textValue (newValue, oldValue) {
       this.$emit('change', newValue)
       this.filteredTags = []
+      this.hideMenu = false
       if (
         Math.abs(
           newValue.split('').filter(c => ![' ', '\n'].includes(c)).length -
           oldValue.split('').filter(c => ![' ', '\n'].includes(c)).length
         ) > 1
       ) {
+        this.hideMenu = true
         this.getInnerHTML()
       }
     }
