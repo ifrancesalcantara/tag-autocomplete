@@ -114,6 +114,19 @@ export default {
       this.$nextTick(() => {
         setCaretPosition({ el: this.$refs[this.elementId], childNum: editedTagElementIndex + 1, charNum: 1 })
       })
+    },
+    listTags () {
+      this.positionX = this.$refs[this.elementId].offsetLeft
+      this.nudgeBottom = this.$refs[this.elementId].offsetTop + this.$refs[this.elementId].clientHeight
+
+      this.loading = true
+      this.$store.dispatch('tags/list', { search: this.modifyingWord.text.replace('#', ''), save: true })
+        .then(tags => {
+          this.addingTag = tags[0]
+        })
+        .finally(() => {
+          this.loading = false
+        })
     }
   },
   watch: {
@@ -126,24 +139,13 @@ export default {
       this.modifyingWord = getChangedWordDataOnInput({ newValue, oldValue })
       if (this.modifyingWord.text.startsWith('#') && this.modifyingWord.text !== '#') {
         if (!this.show) this.show = true
+        this.listTags()
       } else {
         this.show = false
       }
     },
     show (v) {
-      if (v) {
-        this.positionX = this.$refs[this.elementId].offsetLeft
-        this.nudgeBottom = this.$refs[this.elementId].offsetTop + this.$refs[this.elementId].clientHeight
-
-        this.loading = true
-        this.$store.dispatch('tags/list', { search: this.modifyingWord.text.replace('#', ''), save: true })
-          .then(tags => {
-            this.addingTag = tags[0]
-          })
-          .finally(() => {
-            this.loading = false
-          })
-      } else {
+      if (!v) {
         this.addingTag = null
         this.modifyingWord = {
           text: '',
