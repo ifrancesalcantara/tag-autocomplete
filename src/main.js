@@ -14,7 +14,8 @@ import Vuetify, {
   VMain,
   VFadeTransition,
   VMenu,
-  VTextarea
+  VTextarea,
+  VTooltip
 } from 'vuetify/lib'
 import en from 'vuetify/es5/locale/en'
 import es from 'vuetify/es5/locale/es'
@@ -45,7 +46,8 @@ Vue.use(Vuetify, {
     VMain,
     VFadeTransition,
     VMenu,
-    VTextarea
+    VTextarea,
+    VTooltip
   }
 })
 

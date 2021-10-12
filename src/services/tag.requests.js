@@ -5,8 +5,9 @@ export class TagRequests {
   list (search) {
     return new Promise((resolve, reject) => {
       setTimeout(() => {
-        const mockRes = mockTagList
-          .filter((tag) => sanitize(tag.text).startsWith(sanitize(search)))
+        const mockRes = search
+          ? mockTagList.filter((tag, i) => sanitize(tag.text).startsWith(sanitize(search)))
+          : mockTagList.slice(0, 5)
         resolve(mockRes)
       }, 400)
     })

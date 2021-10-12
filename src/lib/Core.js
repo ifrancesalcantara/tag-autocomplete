@@ -1,15 +1,6 @@
 // I would store javascript object-related functions in a generic file like this.
 // For example, comparing two arrays have the same strings with no regard to order may be used across the application for ID containing arrays
 
-function findIndexOfFirstUnmatchingCharacterBetweenStrings ({ string1, string2 }) {
-  let i = string1.split('').findIndex((char, index) => {
-    return string2.split('')[index] !== char
-  })
-  return i !== -1 ? i
-    : string2.split('').findIndex((char, index) => {
-      return string1.split('')[index] !== char
-    })
-}
 function setCaretPosition({ el, childNum, charNum }) {
   let sel
   el.focus()
@@ -26,6 +17,5 @@ function setCaretPosition({ el, childNum, charNum }) {
 }
 
 export {
-  setCaretPosition,
-  findIndexOfFirstUnmatchingCharacterBetweenStrings
+  setCaretPosition
 }
