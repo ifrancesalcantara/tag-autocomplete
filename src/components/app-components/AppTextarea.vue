@@ -1,30 +1,17 @@
 <template>
   <div>
     <div
-      class="editor"
+      class="editor show-spaces"
       :id="elementId"
       :ref="elementId"
       contenteditable
       @input="(e) => textValue = e.srcElement.innerText"
       :placeholder="placeholder || $t('default_content.textarea_placeholder')"
-      @keypress="onKeyPress"
+      @keypress="handleInputKeyPress"
     />
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    {{addingTagWordData}}
-    <br>
-    <br>
-    <br>
-    {{addingTag}}
     <v-menu v-if="loading || tags.length" v-model="show" :position-x="positionX" :nudge-bottom="nudgeBottom">
       <v-list class="pt-1 pb-0" :class="{ 'full-width': xsOnly, 'min-width-300px': smAndUp, 'min-height-100px': loading }">
-        <v-list-item v-for="tag in tags" :key="tag.id" @click="(e) => addTag(tag, e)" :class="{ 'active-tag': addingTag && addingTag.text === tag.text }">
+        <v-list-item v-for="tag in tags" :key="tag.id" @click="(e) => addTag(tag.text, e)" :class="{ 'active-tag': addingTag && addingTag.text === tag.text }">
           <v-list-item-title>#{{ tag.text }}</v-list-item-title>
         </v-list-item>
       </v-list>
@@ -36,7 +23,7 @@
 import { mapState } from 'vuex'
 
 import { getChangedWordOnInputData } from '@/lib/Text'
-import { setCaretPosition } from '@/lib/Core'
+import { getCaretPosition, setCaretPosition } from '@/lib/Core'
 import { generateUUID } from '@/lib/UUID'
 
 import vuetifyMixins from '@/mixins/Vuetify'
@@ -51,7 +38,7 @@ export default {
   data: () => ({
     elementId: null,
     addingTag: null,
-    addingTagWordData: {
+    modifyingWord: {
       text: '',
       startIndex: null,
       endIndex: null
@@ -71,42 +58,49 @@ export default {
     }
   },
   methods: {
-    addTag (tag, event) {
+    addTag (tagText, event) {
       let newTextValue = this.textValue.split('')
-      newTextValue.splice(this.addingTagWordData.startIndex, this.addingTagWordData.text.split('').length, '#' + tag.text)
+      newTextValue.splice(this.modifyingWord.startIndex, this.modifyingWord.text.split('').length, '#' + tagText)
       this.textValue = newTextValue.join('')
       this.getInnerHTML()
-      this.moveCaret()
+      this.moveCaret(tagText)
       this.show = false
     },
-    onKeyPress (e) {
-      if (['Enter', ' '].includes(e.key) && this.show && this.addingTag) {
-        e.preventDefault()
-        this.addTag(this.addingTag, e)
+    handleInputKeyPress (e) {
+      if (['Enter', ' '].includes(e.key)) {
+        if (this.show && this.addingTag) {
+          e.preventDefault()
+          this.addTag(this.addingTag.text, e)
+        } else if (this.modifyingWord.text.startsWith('#')) {
+          this.addTag(this.modifyingWord.text.replace('#', ''), e)
+        }
       }
     },
-    checkChangeAddingTagByArrows (e) {
-      if (this.show && ['ArrowDown', 'ArrowUp'].includes(e.key)) e.preventDefault()
-      if (!this.show || this.loading) return
-      const nextTag = this.tags[this.addingTagIndex + 1]
-      const prevTag = this.tags[this.addingTagIndex - 1]
-      if (e.key === 'ArrowDown') this.addingTag = nextTag || prevTag
-      else if (e.key === 'ArrowUp') this.addingTag = prevTag || nextTag
+    handleArrowPress (e) {
+      if (this.show && ['ArrowDown', 'ArrowUp'].includes(e.key)) {
+        console.log(!this.show, this.loading)
+        e.preventDefault()
+        if (!this.show || this.loading) return
+        const nextTag = this.tags[this.addingTagIndex + 1]
+        const prevTag = this.tags[this.addingTagIndex - 1]
+        if (e.key === 'ArrowDown') this.addingTag = nextTag || prevTag
+        else if (e.key === 'ArrowUp') this.addingTag = prevTag || nextTag
+      }
     },
     getInnerHTML () {
       const html = this.textValue.split('\n').map((p) => 
         p.split(' ').map((w, i) => 
           w.startsWith('#') && w !== '#'
-            ? `<span class="active-tag">${w}</span>${ i === p.split(' ').length - 1 ? '<span class="show-spaces"> </span>' : ''}`
-            : w
+            ? `<span class="active-tag">${w.trim()}</span>${ i === p.split(' ').length - 1 ? '<span class="show-spaces"> </span>' : ''}`
+            : w.trim()
         ).join(' ')
       ).join('<br>')
       this.$refs[this.elementId].innerHTML = html
     },
-    moveCaret () {
+    moveCaret (tagText) {
       let editedTagElementIndex
       this.$refs[this.elementId].childNodes.forEach((node, i) => {
-        if (node.textContent === `#${this.addingTag.text}`) {
+        if (node.textContent === `#${tagText}`) {
           editedTagElementIndex = i
         }
       })
@@ -122,14 +116,14 @@ export default {
         this.show = false
         return
       }
-      this.addingTagWordData = getChangedWordOnInputData({ newValue, oldValue })
-      if (this.addingTagWordData.text.startsWith('#') && this.addingTagWordData.text !== '#') {
+      this.modifyingWord = getChangedWordOnInputData({ newValue, oldValue })
+      if (this.modifyingWord.text.startsWith('#') && this.modifyingWord.text !== '#') {
         if (!this.show) this.show = true
         this.positionX = this.$refs[this.elementId].offsetLeft
         this.nudgeBottom = this.$refs[this.elementId].offsetTop + this.$refs[this.elementId].clientHeight
 
         this.loading = true
-        this.$store.dispatch('tags/list', { search: this.addingTagWordData.text.replace('#', ''), save: true })
+        this.$store.dispatch('tags/list', { search: this.modifyingWord.text.replace('#', ''), save: true })
           .then(tags => {
             this.addingTag = tags[0]
           })
@@ -143,7 +137,7 @@ export default {
     show (v) {
       if (!v) {
         this.addingTag = null
-        this.addingTagWordData = {
+        this.modifyingWord = {
           text: '',
           startIndex: null,
           endIndex: null
@@ -154,11 +148,11 @@ export default {
   },
   created () {
     this.elementId = generateUUID()
-    window.addEventListener('keydown', this.checkChangeAddingTagByArrows)
+    window.addEventListener('keydown', this.handleArrowPress)
   },
   mixins: [vuetifyMixins],
   beforeDestroy () {
-    window.removeEventListener('keydown', this.checkChangeAddingTagByArrows)
+    window.removeEventListener('keydown', this.handleArrowPress)
   }
 }
 </script>
