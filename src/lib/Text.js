@@ -4,7 +4,7 @@ function sanitize (text) {
   return text.toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
 }
 
-function getChangedWordOnInputData ({ newValue, oldValue }) {
+function getChangedWordDataOnInput ({ newValue, oldValue }) {
   let changedCharacterIndex = oldValue ? findIndexOfFirstUnmatchingCharacterBetweenStrings({ string1: newValue, string2: oldValue }) : 0
   // When deleting last character of a word, subtract 1 to index
   if (!!changedCharacterIndex && isWordBreakingCharacter(newValue.split('')[changedCharacterIndex])) {
@@ -31,5 +31,5 @@ function isWordBreakingCharacter (character) {
 
 export {
   sanitize,
-  getChangedWordOnInputData
+  getChangedWordDataOnInput
 }

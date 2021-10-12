@@ -23,7 +23,7 @@
 <script>
 import { mapState } from 'vuex'
 
-import { getChangedWordOnInputData } from '@/lib/Text'
+import { getChangedWordDataOnInput } from '@/lib/Text'
 import { setCaretPosition } from '@/lib/Core'
 import { generateUUID } from '@/lib/UUID'
 
@@ -123,9 +123,15 @@ export default {
         this.show = false
         return
       }
-      this.modifyingWord = getChangedWordOnInputData({ newValue, oldValue })
+      this.modifyingWord = getChangedWordDataOnInput({ newValue, oldValue })
       if (this.modifyingWord.text.startsWith('#') && this.modifyingWord.text !== '#') {
         if (!this.show) this.show = true
+      } else {
+        this.show = false
+      }
+    },
+    show (v) {
+      if (v) {
         this.positionX = this.$refs[this.elementId].offsetLeft
         this.nudgeBottom = this.$refs[this.elementId].offsetTop + this.$refs[this.elementId].clientHeight
 
@@ -138,11 +144,6 @@ export default {
             this.loading = false
           })
       } else {
-        this.show = false
-      }
-    },
-    show (v) {
-      if (!v) {
         this.addingTag = null
         this.modifyingWord = {
           text: '',
