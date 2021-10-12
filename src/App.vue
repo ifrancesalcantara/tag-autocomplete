@@ -20,6 +20,15 @@ export default {
   .full-height {
     height: 100%;
   }
+  .full-width {
+    width: 100%;
+  }
+  .min-width-300px {
+    min-width: 300px;
+  }
+  .min-height-100px {
+    min-height: 100px;
+  }
   /* Spacing */
   .show-spaces {
     white-space: pre;

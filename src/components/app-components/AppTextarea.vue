@@ -1,32 +1,30 @@
 <template>
-  <mentionable
-    :keys="['#']"
-    :items="availableTags"
-    @search="listTags($event)"
-    @open="onOpen"
-    :disabled="hidePopover"
-    insert-space>
-    <div
-      class="editor show-spaces"
-      :id="elementId"
-      :ref="elementId"
-      contenteditable
-      @input="(e) => textValue = e.srcElement.innerText"
-      :placeholder="placeholder || $t('default_content.textarea_placeholder')"
-    />
-    <template #no-result>
-      <div class="dim empty-tag-menu">
-        {{ loading ? $t('default_content.loading_with_dots') : $t('default_content.no_results') }}
-      </div>
-    </template>
-    <template #item="{ item }">
-      <div class="mention-item">
-        <span class="dim">
-          {{ item.label }}
-        </span>
-      </div>
-    </template>
-  </mentionable>
+  <div>
+    <mentionable
+      :keys="['#']"
+      :items="availableTags"
+      @search="listTags($event)"
+      @open="onOpen"
+      disabled
+      insert-space
+      ref=mentionable>
+      <div
+        class="editor show-spaces"
+        :id="elementId"
+        :ref="elementId"
+        contenteditable
+        @input="(e) => textValue = e.srcElement.innerText"
+        :placeholder="placeholder || $t('default_content.textarea_placeholder')"
+      />
+    </mentionable>
+    <v-menu v-if="loading || filteredTags.length" :value="!!addingTagText" :position-x="positionX" :nudge-bottom="nudgeBottom" :min-width="xsOnly ? '95%' : '300px'">
+      <v-list class="pt-1 pb-0" :class="{ 'min-height-100px': loading }">
+        <v-list-item v-for="(tag, i) in filteredTags" :key="i" @click="$refs.mentionable.applyMention(i)" :class="{ 'active-tag': $refs.mentionable.selectedIndex === i }">
+          <v-list-item-title>{{ tag.label }}</v-list-item-title>
+        </v-list-item>
+      </v-list>
+    </v-menu>
+  </div>
 </template>
 
 <script>
@@ -44,11 +42,13 @@ export default {
     placeholder: String
   },
   data: () => ({
-    hidePopover: false,
     addingTagText: '',
+    filteredTags: [],
     elementId: null,
+    nudgeBottom: 0,
+    loading: false,
     textValue: '',
-    loading: false
+    positionX: 0
   }),
   computed: {
     ...mapState({
@@ -74,20 +74,26 @@ export default {
       setCaretPosition({ el: this.$refs[this.elementId], childNum: this.$refs[this.elementId].childNodes.length - 1, charNum: 1 })
     },
     listTags (search) {
+      const { top, height, left } = this.$refs[this.elementId].getBoundingClientRect()
+      this.positionX = left
+      this.nudgeBottom = top + height
       this.addingTagText = search
       this.loading = true
       this.$store.dispatch('tags/list', { search, save: true }).finally(() => {
+        this.filteredTags = this.$refs.mentionable.displayedItems
         this.loading = false
       })
     },
     onOpen () {
-      this.hidePopover = false
       this.$store.commit('tags/resetList')
     },
-    checkGetHTML (e) {
-      if (['Enter', ' '].includes(e.key) && this.addingTagText) {
+    onKeyDown (e) {
+      if (e.key === 'Enter' && this.$refs.mentionable.selectedIndex && this.filteredTags.length) {
         e.preventDefault()
-        this.hidePopover = true
+        this.getInnerHTML()
+        this.$refs.mentionable.applyMention(this.$refs.mentionable.selectedIndex)
+      } else if (e.key === ' ' && this.addingTagText) {
+        e.preventDefault()
         this.getInnerHTML()
       }
     }
@@ -95,6 +101,7 @@ export default {
   watch: {
     textValue (newValue, oldValue) {
       this.$emit('change', newValue)
+      this.filteredTags = []
       if (
         Math.abs(
           newValue.split('').filter(c => ![' ', '\n'].includes(c)).length -
@@ -110,26 +117,15 @@ export default {
   },
   created () {
     this.elementId = generateUUID()
-    window.addEventListener('keydown', this.checkGetHTML)
+    window.addEventListener('keydown', this.onKeyDown)
   },
   mixins: [vuetifyMixins],
   beforeDestroy () {
-    window.removeEventListener('keydown', this.checkGetHTML)
+    window.removeEventListener('keydown', this.onKeyDown)
   }
 }
 </script>
 
-<style lang="scss">
-  .vue-popover-theme {
-    background-color: white;
-    position: absolute;
-    left: 250px !important;
-    top: 10px !important;
-    min-width: 250px !important;
-    transform: translate(50%, 50%);
-    box-shadow: rgb(101 119 134 / 20%) 0px 0px 15px, rgb(101 119 134 / 15%) 0px 0px 3px 1px
-  }
-</style>
 <style lang="scss" scoped>
 ::v-deep {
   .active-tag {
@@ -147,22 +143,7 @@ export default {
   padding: 12px 0;
   position: relative;
 }
-.preview {
-  font-family: monospace;
-  white-space: pre-wrap;
-  margin-top: 12px;
-  padding: 12px;
-  background: #f8f8f8;
-  border-radius: 6px;
-}
-.empty-tag-menu, .mention-item {
-  padding: 16px 24px 16px 12px;
-  border-radius: 4px;
-}
-.mention-item {
-  cursor: pointer;
-}
-.mention-selected .mention-item {
+.active-tag {
   background-color: rgb(247, 249, 249);
 }
 </style>
