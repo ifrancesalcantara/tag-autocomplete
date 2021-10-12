@@ -8,10 +8,11 @@
       @input="(e) => textValue = e.srcElement.innerText"
       :placeholder="placeholder || $t('default_content.textarea_placeholder')"
       @keypress="handleInputKeyPress"
+      @click="handleMoveAttempt"
     />
     <v-menu v-if="loading || tags.length" v-model="show" :position-x="positionX" :nudge-bottom="nudgeBottom">
       <v-list class="pt-1 pb-0" :class="{ 'full-width': xsOnly, 'min-width-300px': smAndUp, 'min-height-100px': loading }">
-        <v-list-item v-for="tag in tags" :key="tag.id" @click="(e) => addTag(tag.text, e)" :class="{ 'active-tag': addingTag && addingTag.text === tag.text }">
+        <v-list-item v-for="tag in tags" :key="tag.id" @click="addTag(tag.text)" :class="{ 'active-tag': addingTag && addingTag.text === tag.text }">
           <v-list-item-title>#{{ tag.text }}</v-list-item-title>
         </v-list-item>
       </v-list>
@@ -23,7 +24,7 @@
 import { mapState } from 'vuex'
 
 import { getChangedWordOnInputData } from '@/lib/Text'
-import { getCaretPosition, setCaretPosition } from '@/lib/Core'
+import { setCaretPosition } from '@/lib/Core'
 import { generateUUID } from '@/lib/UUID'
 
 import vuetifyMixins from '@/mixins/Vuetify'
@@ -58,7 +59,7 @@ export default {
     }
   },
   methods: {
-    addTag (tagText, event) {
+    addTag (tagText) {
       let newTextValue = this.textValue.split('')
       newTextValue.splice(this.modifyingWord.startIndex, this.modifyingWord.text.split('').length, '#' + tagText)
       this.textValue = newTextValue.join('')
@@ -70,22 +71,27 @@ export default {
       if (['Enter', ' '].includes(e.key)) {
         if (this.show && this.addingTag) {
           e.preventDefault()
-          this.addTag(this.addingTag.text, e)
+          this.addTag(this.addingTag.text)
         } else if (this.modifyingWord.text.startsWith('#')) {
           e.preventDefault()
-          this.addTag(this.modifyingWord.text.replace('#', ''), e)
+          this.addTag(this.modifyingWord.text.replace('#', ''))
         }
       }
     },
-    handleArrowPress (e) {
+    handleMoveAttempt (e) {
       if (this.show && ['ArrowDown', 'ArrowUp'].includes(e.key)) {
-        console.log(!this.show, this.loading)
         e.preventDefault()
         if (!this.show || this.loading) return
         const nextTag = this.tags[this.addingTagIndex + 1]
         const prevTag = this.tags[this.addingTagIndex - 1]
         if (e.key === 'ArrowDown') this.addingTag = nextTag || prevTag
         else if (e.key === 'ArrowUp') this.addingTag = prevTag || nextTag
+      }
+      else if (['ArrowLeft', 'ArrowRight'].includes(e.key) || e.type === 'click') {
+        if (this.modifyingWord.text.startsWith('#')) {
+          this.addTag(this.modifyingWord.text.replace('#', ''))
+          e.preventDefault()
+        }
       }
     },
     getInnerHTML () {
@@ -149,11 +155,11 @@ export default {
   },
   created () {
     this.elementId = generateUUID()
-    window.addEventListener('keydown', this.handleArrowPress)
+    window.addEventListener('keydown', this.handleMoveAttempt)
   },
   mixins: [vuetifyMixins],
   beforeDestroy () {
-    window.removeEventListener('keydown', this.handleArrowPress)
+    window.removeEventListener('keydown', this.handleMoveAttempt)
   }
 }
 </script>

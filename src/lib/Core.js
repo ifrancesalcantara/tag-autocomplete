@@ -25,22 +25,7 @@ function setCaretPosition({ el, childNum, charNum }) {
   }
 }
 
-function getCaretPosition ({ el }) {
-  let pos
-  if (document.selection && document.selection.createRange) {
-    const range = document.selection.createRange()
-    const bookmark = range.getBookmark()
-    pos = bookmark.charCodeAt(2) - 2
-  } else if (el.setSelectionRange) {
-    pos = el.selectionStart
-  } else {
-    pos = window.getSelection().focusOffset
-  }
-  return pos
-}
-
 export {
-  getCaretPosition,
   setCaretPosition,
   findIndexOfFirstUnmatchingCharacterBetweenStrings
 }
