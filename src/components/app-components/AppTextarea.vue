@@ -63,7 +63,7 @@ export default {
     getInnerHTML (childNumOffset) {
       this.addingTagText = ''
       const html = this.textValue
-        .replace('[object Object]', '#') // TODO fix item click adding '[object Object]' instead of hash
+        .replace('[object Object]', ' #') // TODO fix item click adding '[object Object]' instead of hash
         .split('\n').map((p) => {
           return p.split(' ').map((w) => {
             return w.startsWith('#') && w !== '#'
