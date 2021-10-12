@@ -106,7 +106,7 @@ export default {
   .vue-popover-theme {
     background-color: white;
     position: absolute;
-    left: 200px !important;
+    left: 250px !important;
     top: 10px !important;
     min-width: 250px !important;
     transform: translate(50%, 50%);
