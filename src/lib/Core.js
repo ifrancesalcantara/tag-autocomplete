@@ -10,49 +10,31 @@ function findIndexOfFirstUnmatchingCharacterBetweenStrings ({ string1, string2 }
       return string1.split('')[index] !== char
     })
 }
+function setCaretPosition({ el, childNum, charNum }) {
+  // var range = document.createRange()
+  // var sel = window.getSelection()
 
-function getCaretPosition(editableDiv) {
-  var caretPos = 0,
-    sel, range
-  if (window.getSelection) {
-    sel = window.getSelection()
-    if (sel.rangeCount) {
-      range = sel.getRangeAt(0)
-      if (range.commonAncestorContainer.parentNode == editableDiv) {
-        caretPos = range.endOffset
-      }
-    }
-  } else if (document.selection && document.selection.createRange) {
-    range = document.selection.createRange()
-    if (range.parentElement() == editableDiv) {
-      var tempEl = document.createElement("span")
-      editableDiv.insertBefore(tempEl, editableDiv.firstChild);
-      var tempRange = range.duplicate()
-      tempRange.moveToElementText(tempEl)
-      tempRange.setEndPoint("EndToEnd", range)
-      caretPos = tempRange.text.length
-    }
+  
+  // range.setStart(el, offset)
+  // range.collapse(false)
+  
+  // sel.removeAllRanges()
+  // sel.addRange(range)
+  let sel
+  el.focus()
+  if (document.selection) {
+    sel = document.selection.createRange()
+    sel.moveStart('character', charNum)
+    sel.select()
   }
-  return caretPos
-}
-
-function setCaretPosition({ el, offset }) {
-  var range = document.createRange()
-  var sel = window.getSelection()
-
-  
-  range.setStart(el, offset)
-  range.collapse(true)
-  
-  sel.removeAllRanges()
-  sel.addRange(range)
-  // var range = el.createTextRange()
-  // range.move('character', offset)
-  // range.select()
+  else {
+    sel = window.getSelection()
+    const element = typeof childNum === 'number' ? el.childNodes[childNum] : el
+    sel.collapse(element, charNum)
+  }
 }
 
 export {
-  getCaretPosition,
   setCaretPosition,
   findIndexOfFirstUnmatchingCharacterBetweenStrings
 }

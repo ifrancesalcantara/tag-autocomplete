@@ -7,8 +7,21 @@
       contenteditable
       @input="(e) => textValue = e.srcElement.innerText"
       :placeholder="placeholder || $t('default_content.textarea_placeholder')"
-      @keypress="checkAddTag"
+      @keypress="onKeyPress"
     />
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    {{addingTagWordData}}
+    <br>
+    <br>
+    <br>
+    {{addingTag}}
     <v-menu v-if="loading || tags.length" v-model="show" :position-x="positionX" :nudge-bottom="nudgeBottom">
       <v-list class="pt-1 pb-0" :class="{ 'full-width': xsOnly, 'min-width-300px': smAndUp, 'min-height-100px': loading }">
         <v-list-item v-for="tag in tags" :key="tag.id" @click="(e) => addTag(tag, e)" :class="{ 'active-tag': addingTag && addingTag.text === tag.text }">
@@ -60,49 +73,13 @@ export default {
   methods: {
     addTag (tag, event) {
       let newTextValue = this.textValue.split('')
-
-      // Find edited tag node element to place cursor at its end after adding it
-      let editedTagElementIndex = 0
-      let foundEditingTagElement = false
-      let inTextElement = false
-      this.textValue.split('\n').forEach((paragraph, i) => {
-        if (i) editedTagElementIndex++
-        paragraph.split(' ').forEach((word, j) => {
-          if ((word.includes('#') && word !== '#')) {
-            inTextElement = false
-            if (word === this.addingTagWordData.text) foundEditingTagElement = true
-            else if (!foundEditingTagElement) editedTagElementIndex++
-          } else if (!inTextElement) {
-            inTextElement = true
-            editedTagElementIndex++
-          }
-        })
-      })
-
-      // Complete tag and update value
       newTextValue.splice(this.addingTagWordData.startIndex, this.addingTagWordData.text.split('').length, '#' + tag.text)
       this.textValue = newTextValue.join('')
-
-      // Add span style wrappers to tags
-      const html = newTextValue.join('').split('\n').map((paragraph) => 
-        paragraph.split(' ').map((word, i) => 
-          word.includes('#') && word !== '#'
-            ? `<span class="active-tag">${word}</span>${ i === paragraph.split(' ').length - 1 ? '<span class="show-spaces"> </span>' : ''}`
-            : word
-        ).join(' ')
-      ).join('<br>')
-
-      // Set caret position
-      this.$nextTick(() => {
-        this.$refs[this.elementId].innerHTML = html
-        setTimeout(() => {
-          setCaretPosition({ el: this.$refs[this.elementId], offset: this.$refs[this.elementId].childNodes.length })
-          this.show = false
-        }, 0)
-        // console.log(this.$refs[this.elementId].childNodes[editedTagElementIndex + 1])
-      })
+      this.getInnerHTML()
+      this.moveCaret()
+      this.show = false
     },
-    checkAddTag (e) {
+    onKeyPress (e) {
       if (['Enter', ' '].includes(e.key) && this.show && this.addingTag) {
         e.preventDefault()
         this.addTag(this.addingTag, e)
@@ -115,11 +92,36 @@ export default {
       const prevTag = this.tags[this.addingTagIndex - 1]
       if (e.key === 'ArrowDown') this.addingTag = nextTag || prevTag
       else if (e.key === 'ArrowUp') this.addingTag = prevTag || nextTag
+    },
+    getInnerHTML () {
+      const html = this.textValue.split('\n').map((p) => 
+        p.split(' ').map((w, i) => 
+          w.startsWith('#') && w !== '#'
+            ? `<span class="active-tag">${w}</span>${ i === p.split(' ').length - 1 ? '<span class="show-spaces"> </span>' : ''}`
+            : w
+        ).join(' ')
+      ).join('<br>')
+      this.$refs[this.elementId].innerHTML = html
+    },
+    moveCaret () {
+      let editedTagElementIndex
+      this.$refs[this.elementId].childNodes.forEach((node, i) => {
+        if (node.textContent === `#${this.addingTag.text}`) {
+          editedTagElementIndex = i
+        }
+      })
+      this.$nextTick(() => {
+        setCaretPosition({ el: this.$refs[this.elementId], childNum: editedTagElementIndex + 1, charNum: 1 })
+      })
     }
   },
   watch: {
     textValue (newValue, oldValue) {
       this.$emit('change', newValue)
+      if (oldValue && Math.abs(newValue.split('').length - oldValue.split('').length) > 1) {
+        this.show = false
+        return
+      }
       this.addingTagWordData = getChangedWordOnInputData({ newValue, oldValue })
       if (this.addingTagWordData.text.startsWith('#') && this.addingTagWordData.text !== '#') {
         if (!this.show) this.show = true
@@ -168,21 +170,21 @@ export default {
   }
 }
 [contenteditable][placeholder]:empty:before {
+  background-color: transparent;
   content: attr(placeholder);
   position: absolute;
   color: gray;
-  background-color: transparent;
 }
 .editor {
-  padding: 12px 0;
   outline: 0px solid transparent;
+  padding: 12px 0;
 }
 .v-menu__content {
   box-shadow: rgb(101 119 134 / 20%) 0px 0px 15px, rgb(101 119 134 / 15%) 0px 0px 3px 1px;
 }
 .v-list {
   z-index: 1;
-  .v-list-item {
+  .v-list-item  {
     &.active-tag {
       background-color: rgb(247, 249, 249);
     }
