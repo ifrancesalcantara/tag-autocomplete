@@ -73,7 +73,7 @@ export default {
         .filter((p, i) => p || this.textValue.split('\n')[i + 1]) // TODO fix: allow multiple newlines
         .join('\n')
       this.$refs[this.elementId].innerHTML = html
-      setCaretPosition({ el: this.$refs[this.elementId], childNum: this.$refs[this.elementId].childNodes.length - 1 + (childNumOffset || 0), charNum: 1 })
+      setCaretPosition({ el: this.$refs[this.elementId], childNum: this.$refs[this.elementId].childNodes.length - 1, charNum: 1 })
     },
     listTags (search) {
       const { top, height, left } = this.$refs[this.elementId].getBoundingClientRect()
@@ -96,7 +96,7 @@ export default {
         this.filteredTags = []
       } else if (e.key === ' ' && this.addingTagText) {
         e.preventDefault()
-        this.getInnerHTML(-1)
+        this.getInnerHTML()
       } else {
       }
     },
