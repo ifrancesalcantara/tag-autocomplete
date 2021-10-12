@@ -29,4 +29,8 @@ export default {
   .min-height-100px {
     min-height: 100px;
   }
+  /* Other */
+  .show-spaces {
+    white-space: pre;
+  }
 </style>
