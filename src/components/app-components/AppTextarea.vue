@@ -72,6 +72,7 @@ export default {
           e.preventDefault()
           this.addTag(this.addingTag.text, e)
         } else if (this.modifyingWord.text.startsWith('#')) {
+          e.preventDefault()
           this.addTag(this.modifyingWord.text.replace('#', ''), e)
         }
       }
@@ -91,10 +92,10 @@ export default {
       const html = this.textValue.split('\n').map((p) => 
         p.split(' ').map((w, i) => 
           w.startsWith('#') && w !== '#'
-            ? `<span class="active-tag">${w.trim()}</span>${ i === p.split(' ').length - 1 ? '<span class="show-spaces"> </span>' : ''}`
+            ? `<span class="active-tag" contentEditable="false">${w.trim()}</span>${ i === p.split(' ').length - 1 ? ' ' : ''}`
             : w.trim()
         ).join(' ')
-      ).join('<br>')
+      ).join('\n')
       this.$refs[this.elementId].innerHTML = html
     },
     moveCaret (tagText) {

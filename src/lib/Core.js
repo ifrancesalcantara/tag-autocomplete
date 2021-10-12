@@ -27,7 +27,6 @@ function setCaretPosition({ el, childNum, charNum }) {
 
 function getCaretPosition ({ el }) {
   let pos
-  console.log(el.selection, el.setSelectionRange)
   if (document.selection && document.selection.createRange) {
     const range = document.selection.createRange()
     const bookmark = range.getBookmark()
